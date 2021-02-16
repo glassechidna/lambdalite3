@@ -1,0 +1,38 @@
+title Mostly real-time SQLite in Lambda
+
+participant "Browser" as b
+participant "Lambda" as l
+participant S3
+participant "DynamoDB" as ddb
+
+b->l:query "select title from books where id = 15"
+l->S3:GetObject(key=db.sqlite, version=abc)
+rbox right of S3:takes ~500ms for 100MB
+l<-S3:base sqlite db
+note over l:sqlite3_open()
+l->ddb:Query(key={pk=changesets}, startKey=null)
+l<-ddb:changesets applicable to base sqlite db
+note over l:sqlite3changeset_apply()
+note over l:sqlite3_step() for each row
+b<-l:json array of row objects
+
+space
+
+b->l:query "insert into books ..."
+l->ddb:Query(key={pk=changesets}, startKey=startKey={pk=changesets, sk=ulid_from_last_changeset})
+l<-ddb:changesets applicable to base sqlite db
+note over l:sqlite3changeset_apply()
+note over l:sqlite3_step()
+note over l:sqlite3session_changeset()
+l->ddb:PutItem(item={pk=changesets, sk=ulid, bin=changeset}}
+
+
+==some time passes, this gets served by a different lambda container==
+
+b->l:query "select title from books where id = 19"
+l->ddb:Query(key={pk=changesets}, startKey={pk=changesets, sk=ulid_from_last_changeset})
+rbox right of ddb:takes ~4ms
+l<-ddb:changesets applicable to base sqlite db
+note over l:sqlite3changeset_apply()
+note over l:sqlite3_step() for each row
+b<-l:json array of row objects

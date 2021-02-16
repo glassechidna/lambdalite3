@@ -1,0 +1,59 @@
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  QueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambdalite3
+      AutoPublishAlias: live
+      Runtime: go1.x
+      Timeout: 5
+      MemorySize: 512
+      CodeUri: ./lambdalite3
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref Bucket
+        - DynamoDBReadPolicy:
+            TableName: !Ref Table
+      Environment:
+        Variables:
+          BUCKET: !Ref Bucket
+          KEY: db.db
+          TABLE: !Ref Table
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Method: GET
+            Path: /query
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+Outputs:
+  QueryFunction:
+    Value: !Ref QueryFunction
+  Bucket:
+    Value: !Ref Bucket
+  Url:
+    Value: !Sub https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/
+  Table:
+    Value: !Ref Table
