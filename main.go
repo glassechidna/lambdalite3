@@ -64,6 +64,18 @@ func NewLambdalite3(cs changesets.ReadWriter) *Lambdalite3 {
 	return &Lambdalite3{cs: cs}
 }
 
+//func (l *Lambdalite3) handleDynamoStream(ctx context.Context, event *events.DynamoDBEvent) error {
+//	//for _, record := range event.Records {
+//	//	/*
+//	//
+//	//	insert into dynamo_fts(pk, sk, attrA, attrB) values(
+//	//
+//	//	 */
+//	//	//record.EventName
+//	//	//record.Change.NewImage[""].String()
+//	//}
+//}
+
 func (l *Lambdalite3) handleQuery(ctx context.Context, event *events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
 	query := event.QueryStringParameters["query"]
 	if len(query) == 0 {
