@@ -6,10 +6,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.7.1
+
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.zigcache
+          key: unconditional
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-modbuild-${{ hashFiles('**/go.sum') }}
+
       - run: ./deploy.sh
